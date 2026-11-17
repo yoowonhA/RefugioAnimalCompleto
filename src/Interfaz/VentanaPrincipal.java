@@ -1,117 +1,93 @@
 package Interfaz;
 
-import java.awt.GridLayout;
-import java.awt.BorderLayout;
-import java.awt.Color;
-import java.awt.Font;
-import javax.swing.BorderFactory;
-import javax.swing.JButton;
-import javax.swing.JFrame;
-import javax.swing.JLabel;
-import javax.swing.JPanel;
-import javax.swing.SwingConstants;
-import javax.swing.SwingUtilities;
 import negocio.GestorAdoptantes;
 import negocio.GestorAnimales;
+import negocio.GestorInventario;
+import negocio.GestorSolicitudes;
 
-public class VentanaPrincipal {
+import javax.swing.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 
-    private final GestorAnimales gestorAnimales = new GestorAnimales();
-    private final GestorAdoptantes gestorAdoptantes = new GestorAdoptantes();
+public class VentanaPrincipal extends JFrame {
 
-    private JFrame ventanaAnimales;
-    private JFrame ventanaAdoptantes;
-    private JFrame ventanaSolicitudes;
-    private JFrame ventanaInventario;
+    // Instancias únicas y compartidas para toda la aplicación (evita que se borren los datos al cerrar ventanas)
+    private GestorAnimales gestorAnimales = new GestorAnimales();
+    private GestorAdoptantes gestorAdoptantes = new GestorAdoptantes();
+    private GestorSolicitudes gestorSolicitudes = new GestorSolicitudes();
+    private GestorInventario gestorInventario = new GestorInventario();
+
+    private JButton btnAnimales, btnAdoptantes, btnSolicitudes, btnInventario;
 
     public VentanaPrincipal() {
-        JFrame ventana = new JFrame("Refugio Animal");
-        ventana.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        ventana.setSize(480, 440);
-        ventana.setLocationRelativeTo(null);
-        ventana.setContentPane(crearContenido());
-        ventana.setVisible(true);
-    }
+        setTitle("Sistema de Refugio de Animales - Menú Principal");
+        setSize(400, 350);
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setLocationRelativeTo(null);
+        setLayout(null);
 
-    private JPanel crearContenido() {
-        JPanel contenido = new JPanel(new BorderLayout());
-        contenido.setBackground(new Color(245, 248, 245));
+        JLabel lblTitulo = new JLabel("Refugio de Animales");
+        lblTitulo.setBounds(130, 20, 150, 25);
+        add(lblTitulo);
 
-        JPanel encabezado = new JPanel(new GridLayout(2, 1, 0, 5));
-        encabezado.setBackground(new Color(47, 105, 78));
-        encabezado.setBorder(BorderFactory.createEmptyBorder(20, 15, 20, 15));
+        btnAnimales = new JButton("Gestión de Animales");
+        btnAnimales.setBounds(90, 70, 200, 35);
+        add(btnAnimales);
 
-        JLabel titulo = new JLabel("Refugio Animal", SwingConstants.CENTER);
-        titulo.setForeground(Color.WHITE);
-        titulo.setFont(new Font("Arial", Font.BOLD, 24));
-        encabezado.add(titulo);
+        btnAdoptantes = new JButton("Gestión de Adoptantes");
+        btnAdoptantes.setBounds(90, 120, 200, 35);
+        add(btnAdoptantes);
 
-        JLabel subtitulo = new JLabel("Sistema de gestion", SwingConstants.CENTER);
-        subtitulo.setForeground(new Color(230, 240, 232));
-        subtitulo.setFont(new Font("Arial", Font.PLAIN, 14));
-        encabezado.add(subtitulo);
-        contenido.add(encabezado, BorderLayout.NORTH);
+        btnSolicitudes = new JButton("Gestión de Solicitudes");
+        btnSolicitudes.setBounds(90, 170, 200, 35);
+        add(btnSolicitudes);
 
-        JPanel botones = new JPanel(new GridLayout(4, 1, 10, 10));
-        botones.setBackground(new Color(245, 248, 245));
-        botones.setBorder(BorderFactory.createEmptyBorder(25, 45, 20, 45));
-        botones.add(crearBoton("Gestion de animales", this::abrirAnimales));
-        botones.add(crearBoton("Gestion de adoptantes", this::abrirAdoptantes));
-        botones.add(crearBoton("Solicitudes de adopcion", this::abrirSolicitudes));
-        botones.add(crearBoton("Inventario", this::abrirInventario));
-        contenido.add(botones, BorderLayout.CENTER);
+        btnInventario = new JButton("Gestión de Inventario");
+        btnInventario.setBounds(90, 220, 200, 35);
+        add(btnInventario);
 
-        JLabel pie = new JLabel("Seleccione una opcion para comenzar", SwingConstants.CENTER);
-        pie.setForeground(new Color(90, 105, 95));
-        pie.setBorder(BorderFactory.createEmptyBorder(0, 10, 15, 10));
-        contenido.add(pie, BorderLayout.SOUTH);
-        return contenido;
-    }
+        // --- ACCIONES DE LOS BOTONES (Pasando los gestores compartidos) ---
 
-    private JButton crearBoton(String texto, Runnable accion) {
-        JButton boton = new JButton(texto);
-        boton.setFont(new Font("Arial", Font.BOLD, 14));
-        boton.setForeground(new Color(40, 75, 55));
-        boton.addActionListener(evento -> accion.run());
-        return boton;
-    }
+        btnAnimales.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                VentanaAnimales ventana = new VentanaAnimales(gestorAnimales);
+                ventana.setVisible(true);
+            }
+        });
 
-    private void abrirAnimales() {
-        if (ventanaAnimales == null || !ventanaAnimales.isDisplayable()) {
-            ventanaAnimales = new VentanaAnimales(gestorAnimales);
-        }
-        mostrarVentanaModulo(ventanaAnimales);
-    }
+        btnAdoptantes.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                VentanaAdoptantes ventana = new VentanaAdoptantes(gestorAdoptantes);
+                ventana.setVisible(true);
+            }
+        });
 
-    private void abrirAdoptantes() {
-        if (ventanaAdoptantes == null || !ventanaAdoptantes.isDisplayable()) {
-            ventanaAdoptantes = new VentanaAdoptantes(gestorAdoptantes);
-        }
-        mostrarVentanaModulo(ventanaAdoptantes);
-    }
+        btnSolicitudes.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                // Se pasan los tres gestores para que la ventana de solicitudes pueda validar cédulas y códigos reales
+                VentanaSolicitudes ventana = new VentanaSolicitudes(gestorSolicitudes, gestorAdoptantes, gestorAnimales);
+                ventana.setVisible(true);
+            }
+        });
 
-    private void abrirSolicitudes() {
-        if (ventanaSolicitudes == null || !ventanaSolicitudes.isDisplayable()) {
-            ventanaSolicitudes = new VentanaSolicitudes();
-        }
-        mostrarVentanaModulo(ventanaSolicitudes);
-    }
-
-    private void abrirInventario() {
-        if (ventanaInventario == null || !ventanaInventario.isDisplayable()) {
-            ventanaInventario = new VentanaInventario();
-        }
-        mostrarVentanaModulo(ventanaInventario);
-    }
-
-    private void mostrarVentanaModulo(JFrame ventana) {
-        ventana.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-        ventana.setVisible(true);
-        ventana.toFront();
-        ventana.requestFocus();
+        btnInventario.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                VentanaInventario ventana = new VentanaInventario(gestorInventario);
+                ventana.setVisible(true);
+            }
+        });
     }
 
     public static void main(String[] args) {
-        SwingUtilities.invokeLater(() -> new VentanaPrincipal());
+        SwingUtilities.invokeLater(new Runnable() {
+            @Override
+            public void run() {
+                new VentanaPrincipal().setVisible(true);
+            }
+        });
     }
 }

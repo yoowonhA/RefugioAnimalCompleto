@@ -1,4 +1,5 @@
 package Interfaz;
+
 import javax.swing.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -17,6 +18,7 @@ public class VentanaAnimales extends JFrame implements ActionListener {
     private JButton btnRegistrar, btnEvaluar, btnTodos, btnDisponibles;
     private JTextArea areaListado;
 
+    // Constructor que recibe el gestor compartido desde la VentanaPrincipal
     public VentanaAnimales(GestorAnimales gestor) {
         this.gestor = gestor;
 
@@ -25,7 +27,6 @@ public class VentanaAnimales extends JFrame implements ActionListener {
         setLayout(null);
         setLocationRelativeTo(null);
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-
 
         agregarEtiqueta("Nombre o alias:", 20, 20);
         txtNombre = new JTextField();
@@ -52,11 +53,10 @@ public class VentanaAnimales extends JFrame implements ActionListener {
         txtPeso.setBounds(180, 160, 180, 25);
         add(txtPeso);
 
-        agregarEtiqueta("Edad al ingreso (meses):", 20, 195);
+        agregarEtiqueta("Edad al ingreso (meses/años):", 20, 195);
         txtEdad = new JTextField();
         txtEdad.setBounds(180, 195, 180, 25);
         add(txtEdad);
-
 
         agregarEtiqueta("Tamaño:", 400, 20);
         cmbTamanio = new JComboBox<>(new String[]{"Pequeño", "Mediano", "Grande"});
@@ -84,11 +84,10 @@ public class VentanaAnimales extends JFrame implements ActionListener {
         add(txtUltimaAtencion);
 
         agregarEtiqueta("Fecha de ingreso:", 400, 195);
-        agregarEtiqueta("Las fechas van como dd/MM/yyyy (ej. 15/11/2026)", 480, 215);
+        agregarEtiqueta("Las fechas van como dd/MM/yyyy", 480, 215);
         txtIngreso = new JTextField();
         txtIngreso.setBounds(580, 195, 180, 25);
         add(txtIngreso);
-
 
         btnRegistrar = new JButton("Registrar animal");
         btnRegistrar.setBounds(20, 240, 170, 30);
@@ -115,12 +114,18 @@ public class VentanaAnimales extends JFrame implements ActionListener {
         btnDisponibles.addActionListener(this);
         add(btnDisponibles);
 
-        //donde se muestran los animales
+        // Área donde se muestran los animales (con salto de línea automático integrado)
         areaListado = new JTextArea();
         areaListado.setEditable(false);
+        areaListado.setLineWrap(true);          // Salto de línea automático para que no se desborde
+        areaListado.setWrapStyleWord(true);     // Respeta las palabras completas al bajar de línea
+
         JScrollPane scroll = new JScrollPane(areaListado);
         scroll.setBounds(20, 330, 740, 240);
         add(scroll);
+
+        // Muestra la lista actual al abrir la ventana si ya había registros previos
+        mostrarAnimales(gestor.getListaAnimales());
     }
 
     private void agregarEtiqueta(String texto, int x, int y) {
@@ -134,8 +139,14 @@ public class VentanaAnimales extends JFrame implements ActionListener {
         if (e.getSource() == btnRegistrar) {
             registrarAnimal();
         } else if (e.getSource() == btnEvaluar) {
-            String resultado = gestor.evaluarUrgenciaAnimal(txtCodigo.getText().trim());
+            String codigoBuscado = txtCodigo.getText().trim();
+            if (codigoBuscado.isEmpty()) {
+                JOptionPane.showMessageDialog(this, "Por favor ingrese el código del animal para evaluar su urgencia.");
+                return;
+            }
+            String resultado = gestor.evaluarUrgenciaAnimal(codigoBuscado);
             JOptionPane.showMessageDialog(this, resultado);
+            mostrarAnimales(gestor.getListaAnimales()); // Actualiza la vista por si cambió de estado
         } else if (e.getSource() == btnTodos) {
             mostrarAnimales(gestor.getListaAnimales());
         } else if (e.getSource() == btnDisponibles) {
@@ -145,12 +156,19 @@ public class VentanaAnimales extends JFrame implements ActionListener {
 
     private void registrarAnimal() {
         double peso = -1;
-        int edad = -1;
+        int edadMeses = -1;
         try {
             peso = Double.parseDouble(txtPeso.getText().trim());
-            edad = Integer.parseInt(txtEdad.getText().trim());
+
+            // Conversión inteligente: si ingresan un número menor o igual a 15, se asume que son años y se pasa a meses.
+            double valorEdad = Double.parseDouble(txtEdad.getText().trim());
+            if (valorEdad <= 15 && valorEdad > 0) {
+                edadMeses = (int) (valorEdad * 12);
+            } else {
+                edadMeses = (int) valorEdad;
+            }
         } catch (NumberFormatException ex) {
-            // Si escribió letras, se queda en -1 y el gestor muestra el error
+            // Si hay error de formato, se mantiene en -1 para que el gestor valide el error
         }
 
         String especie = (String) cmbEspecie.getSelectedItem();
@@ -160,13 +178,12 @@ public class VentanaAnimales extends JFrame implements ActionListener {
         String energia = (String) cmbEnergia.getSelectedItem();
         String salud = (String) cmbSalud.getSelectedItem();
 
-        // Según la especie se crea un Perro o un Gato
         Animal nuevo;
         if (especie.equals("Gato")) {
-            nuevo = new Gato(codigo, txtNombre.getText().trim(), txtRaza.getText().trim(), sexo, peso, edad,
+            nuevo = new Gato(codigo, txtNombre.getText().trim(), txtRaza.getText().trim(), sexo, peso, edadMeses,
                     tamanio, energia, salud, txtHistorial.getText().trim(), txtIngreso.getText().trim());
         } else {
-            nuevo = new Perro(codigo, txtNombre.getText().trim(), txtRaza.getText().trim(), sexo, peso, edad,
+            nuevo = new Perro(codigo, txtNombre.getText().trim(), txtRaza.getText().trim(), sexo, peso, edadMeses,
                     tamanio, energia, salud, txtHistorial.getText().trim(), txtIngreso.getText().trim());
         }
         nuevo.setFechaUltimaAtencion(txtUltimaAtencion.getText().trim());
@@ -184,10 +201,11 @@ public class VentanaAnimales extends JFrame implements ActionListener {
     private void mostrarAnimales(ArrayList<Animal> animales) {
         areaListado.setText("");
         if (animales.isEmpty()) {
-            areaListado.setText("No hay animales para mostrar");
+            areaListado.setText("No hay animales para mostrar en esta lista.");
+            return;
         }
         for (Animal a : animales) {
-            areaListado.append(a.toString() + "\n\n");
+            areaListado.append(a.toString() + "\n----------------------------------------------------\n");
         }
     }
 
@@ -199,6 +217,7 @@ public class VentanaAnimales extends JFrame implements ActionListener {
         txtHistorial.setText("");
         txtUltimaAtencion.setText("");
         txtIngreso.setText("");
+        txtCodigo.setText("");
     }
 
     public static void main(String[] args) {
